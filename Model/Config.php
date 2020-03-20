@@ -125,13 +125,12 @@ class Config
      */
     public function getValue($key)
     {
-        // Load the configuration for SQS from system configs
+        // Load the configuration from system configs
         $this->loadSystemConfigs();
         
-        // If no configuration is found, load the configuration from deployment configs
-        if (empty($this->data)) {
-            $this->load();
-        }
+        // If no data in system configs, load deployment configs
+        $this->load();
+
         return isset($this->data[$key]) ? $this->data[$key] : null;
     }
 
@@ -142,10 +141,21 @@ class Config
      */
     private function load()
     {
-        if (empty($this->data)) {
+        if (null === $this->data) {
             $queueConfig = $this->deploymentConfig->getConfigData(self::QUEUE_CONFIG);
             $this->data = isset($queueConfig[self::SQS_CONFIG]) ? $queueConfig[self::SQS_CONFIG] : [];
         }
+    }
+
+    /**
+     * Get system config value for the XML path
+     *
+     * @param string $path
+     * @return string
+     */
+    private function getSysConfig($path)
+    {
+        return $this->scopeConfig->getValue($path,ScopeInterface::SCOPE_STORE);
     }
 
     /**
@@ -155,11 +165,11 @@ class Config
      */
     private function loadSystemConfigs()
     {
-        if (empty($this->data)) {
-            $this->data[self::REGION] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_REGION,ScopeInterface::SCOPE_STORE);
-            $this->data[self::VERSION] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_VERSION,ScopeInterface::SCOPE_STORE);
-            $this->data[self::ACCESS_KEY] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_ACCESS_KEY,ScopeInterface::SCOPE_STORE);
-            $this->data[self::SECRET_KEY] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_SECRET_KEY,ScopeInterface::SCOPE_STORE);
+        if (null === $this->data) {
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION))) $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION))) $this->data[self::VERSION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION);
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY))) $this->data[self::ACCESS_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY);
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY))) $this->data[self::SECRET_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY);
         }
     }
 }
