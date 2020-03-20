@@ -142,7 +142,7 @@ class Config
      */
     private function load()
     {
-        if (null === $this->data) {
+        if (empty($this->data)) {
             $queueConfig = $this->deploymentConfig->getConfigData(self::QUEUE_CONFIG);
             $this->data = isset($queueConfig[self::SQS_CONFIG]) ? $queueConfig[self::SQS_CONFIG] : [];
         }
@@ -155,7 +155,7 @@ class Config
      */
     private function loadSystemConfigs()
     {
-        if (null === $this->data) {
+        if (empty($this->data)) {
             $this->data[self::REGION] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_REGION,ScopeInterface::SCOPE_STORE);
             $this->data[self::VERSION] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_VERSION,ScopeInterface::SCOPE_STORE);
             $this->data[self::ACCESS_KEY] = $this->scopeConfig->getValue(self::XML_PATH_SQS_QUEUE_ACCESS_KEY,ScopeInterface::SCOPE_STORE);
