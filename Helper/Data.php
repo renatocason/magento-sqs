@@ -34,7 +34,6 @@ class Data
      */
     public function prepareQueueName(string $queueName, $addPrefix = false)
     {
-        $queueName = str_replace('.', '_', $queueName);
         if ($addPrefix) {
             $prefix = $this->sqsConfig->getValue(Config::PREFIX);
             if ($prefix) {
