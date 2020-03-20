@@ -129,7 +129,7 @@ class Config
         $this->loadSystemConfigs();
         
         // If no configuration is found, load the configuration from deployment configs
-        if (null === $this->data) {
+        if (empty($this->data)) {
             $this->load();
         }
         return isset($this->data[$key]) ? $this->data[$key] : null;

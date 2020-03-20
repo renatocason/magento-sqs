@@ -6,7 +6,7 @@
                 <label>Amazon Simple Queue Service (SQS)</label>
                 <field id="queue_name" type="text" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Queue name</label>
-                    <comment>For example: esprinet-stage-example.fifo</comment>
+                    <comment>For example: example.fifo</comment>
                 </field>
                 <field id="region" type="text" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Region</label>
