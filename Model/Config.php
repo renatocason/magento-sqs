@@ -28,6 +28,7 @@ class Config
      */
     const SQS_CONFIG = 'sqs';
 
+    const NAME = 'name';
     const REGION = 'region';
     const VERSION = 'version';
     const ACCESS_KEY = 'access_key';
@@ -35,6 +36,7 @@ class Config
     const PREFIX = 'prefix';
     const ENDPOINT = 'endpoint';
 
+    const XML_PATH_SQS_QUEUE_NAME = 'system/sqs/name';
     const XML_PATH_SQS_QUEUE_REGION = 'system/sqs/region';
     const XML_PATH_SQS_QUEUE_VERSION = 'system/sqs/version';
     const XML_PATH_SQS_QUEUE_ACCESS_KEY = 'system/sqs/access_key';
@@ -77,6 +79,7 @@ class Config
      * 'queue' =>
      *     [
      *         'sqs' => [
+     *             'name' => 'name',
      *             'region' => 'region',
      *             'version' => 'latest',
      *             'access_key' => '123456',
@@ -106,6 +109,7 @@ class Config
         if (!isset($this->connection)) {
             $this->connection = (new SqsConnectionFactory(
                 [
+                    'name' => $this->getValue(Config::NAME),
                     'region' => $this->getValue(Config::REGION),
                     'key' => $this->getValue(Config::ACCESS_KEY),
                     'secret' => $this->getValue(Config::SECRET_KEY),
@@ -166,6 +170,7 @@ class Config
     private function loadSystemConfigs()
     {
         if (null === $this->data) {
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAME))) $this->data[self::NAME] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAME);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION))) $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION))) $this->data[self::VERSION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY))) $this->data[self::ACCESS_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY);
