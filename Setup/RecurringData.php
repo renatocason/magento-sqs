@@ -4,13 +4,17 @@ declare(strict_types=1);
 namespace Belvg\Sqs\Setup;
 
 use Magento\Framework\Setup\InstallDataInterface;
+use Magento\Framework\Setup\ModuleContextInterface;
+use Magento\Framework\Setup\ModuleDataSetupInterface;
+
 use Magento\Framework\App\Config\ConfigResource\ConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Serialize\SerializerInterface;
-use Magento\Framework\Communication\ConfigInterface as CommunicationConfig;
-use Magento\Framework\MessageQueue\ConfigInterface as QueueConfig;
-use Belvg\Sqs\Model\Config;
+use Magento\Framework\MessageQueue\Topology\ConfigInterface as TopologyConfig;
 
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Belvg\Sqs\Model\Config;
 
 /**
  * RecurringData class to search for queues names and fill/update a system config serialized array
@@ -31,16 +35,11 @@ class RecurringData implements InstallDataInterface
      * @var SerializerInterface
      */
     private $serializer;
-
+    
     /**
-     * @var CommunicationConfig
+     * @var TopologyConfig
      */
-    private $communicationConfig;
-
-    /**
-     * @var QueueConfig
-     */
-    private $queueConfig;
+    private $topologyConfig;
 
     /**
      * Constructor
@@ -48,21 +47,18 @@ class RecurringData implements InstallDataInterface
      * @param ConfigInterface $resourceConfig
      * @param ScopeConfigInterface $scopeConfig
      * @param SerializerInterface $serializer
-     * @param CommunicationConfig $communicationConfig
-     * @param QueueConfig $queueConfig
+     * @param TopologyConfig $topologyConfig
      */
     public function __construct(
         ConfigInterface $resourceConfig,
         ScopeConfigInterface $scopeConfig,
         SerializerInterface $serializer,
-        CommunicationConfig $communicationConfig,
-        QueueConfig $queueConfig
+        TopologyConfig $topologyConfig
     ){
         $this->resourceConfig = $resourceConfig;
         $this->scopeConfig = $scopeConfig;
         $this->serializer = $serializer;
-        $this->communicationConfig = $communicationConfig;
-        $this->queueConfig = $queueConfig;
+        $this->topologyConfig = $topologyConfig;
     }
 
     /**
@@ -73,30 +69,27 @@ class RecurringData implements InstallDataInterface
      */
     private function saveConfig($path, $value):void
     {
-        $this->resourceConfig->saveConfig($path, $value, ScopeConfigInterface::SCOPE_TYPE_DEFAULT, \Magento\Store\Model\Store::DEFAULT_STORE_ID);
+        $this->resourceConfig->saveConfig($path, $value, ScopeConfigInterface::SCOPE_TYPE_DEFAULT, Store::DEFAULT_STORE_ID);
     }
 
     /**
-     * Return list of queue names, that are available for connection
+     * Return a list of queue names available for the connection
      *
      * @param string $connection
      * @return array List of queue names
      */
-    private function getQueuesList($connection)
+    private function getQueuesListByConnection($connection)
     {
-        $queues = [];
-        foreach ($this->queueConfig->getConsumers() as $consumer) {
-            if ($consumer[QueueConfig::CONSUMER_CONNECTION] === $connection) {
-                $queues[] = $consumer[QueueConfig::CONSUMER_QUEUE];
+        $queuesList = [];
+        $queues = $this->topologyConfig->getQueues();
+
+        // Add to the list all queues with the provided connection
+        foreach ($queues as $queue) {
+            if ($queue->getConnection() === $connection) {
+                $queuesList[] = $queue->getName();
             }
         }
-        foreach (array_keys($this->communicationConfig->getTopics()) as $topicName) {
-            if ($this->queueConfig->getConnectionByTopic($topicName) === $connection) {
-                $queues = array_merge($queues, $this->queueConfig->getQueuesByTopic($topicName));
-            }
-        }
-        $queues = array_unique($queues);
-        return $queues;
+        return $queuesList;
     }
 
     /**
@@ -105,20 +98,33 @@ class RecurringData implements InstallDataInterface
     public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context)
     {
         // Get XML actually declared queues names
-        $queuesList = getQueuesList(Config::SQS_CONFIG);
+        $queuesList = $this->getQueuesListByConnection(Config::SQS_CONFIG);
 
         // Get the system config queues names serialized array
-        $sysConfQueuesNames = $this->serializer->unserialize($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAME, \Magento\Store\Model\ScopeInterface::SCOPE_STORE));
+        if (!empty($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAME, ScopeInterface::SCOPE_STORE))) {
+            $sysConfQueuesNames = $this->serializer->unserialize($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAME, ScopeInterface::SCOPE_STORE));
+        } else {
+            $sysConfQueuesNames = [];
+        }
+        
+        // Remove old queues from system config serialized array
+        foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueSqsName) {
+            if (!in_array($sysConfQueueName, $queuesList)) {
+                unset($sysConfQueuesNames[$sysConfQueueName]);
+            }
+        }
 
+        // Add new queues to system config serialized array
         foreach ($queuesList as $queueName) {
             if (!isset($sysConfQueuesNames[$queueName])) {
                 $sysConfQueuesNames[$queueName] = '';
             }
         }
 
+        // Serialize the new array
         $newSysConfQueuesNames = $this->serializer->serialize($sysConfQueuesNames);
 
+        // Save the new system config array
         $this->saveConfig(Config::XML_PATH_SQS_QUEUE_NAME,$newSysConfQueuesNames);
-
     }
 }
