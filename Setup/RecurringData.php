@@ -11,10 +11,10 @@ use Magento\Framework\App\Config\ConfigResource\ConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\MessageQueue\Topology\ConfigInterface as TopologyConfig;
+use Belvg\Sqs\Model\Config;
 
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
-use Belvg\Sqs\Model\Config;
 
 /**
  * RecurringData class to search for queues names and fill/update a system config serialized array
@@ -42,6 +42,11 @@ class RecurringData implements InstallDataInterface
     private $topologyConfig;
 
     /**
+     * @var Config
+     */
+    private $sqsConfig;
+
+    /**
      * Constructor
      *
      * @param ConfigInterface $resourceConfig
@@ -53,12 +58,14 @@ class RecurringData implements InstallDataInterface
         ConfigInterface $resourceConfig,
         ScopeConfigInterface $scopeConfig,
         SerializerInterface $serializer,
-        TopologyConfig $topologyConfig
+        TopologyConfig $topologyConfig,
+        Config $sqsConfig
     ){
         $this->resourceConfig = $resourceConfig;
         $this->scopeConfig = $scopeConfig;
         $this->serializer = $serializer;
         $this->topologyConfig = $topologyConfig;
+        $this->sqsConfig = $sqsConfig;
     }
 
     /**
@@ -100,12 +107,8 @@ class RecurringData implements InstallDataInterface
         // Get XML actually declared queues names
         $queuesList = $this->getQueuesListByConnection(Config::SQS_CONFIG);
 
-        // Get the system config queues names serialized array
-        if (!empty($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAMES_MAPPING, ScopeInterface::SCOPE_STORE))) {
-            $sysConfQueuesNames = $this->serializer->unserialize($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAMES_MAPPING, ScopeInterface::SCOPE_STORE));
-        } else {
-            $sysConfQueuesNames = [];
-        }
+        // Get the queues names mapping array
+        $sysConfQueuesNames = $this->sqsConfig->getNamesMapping();
         
         // Remove old queues from system config serialized array
         foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueNameValue) {
@@ -118,7 +121,7 @@ class RecurringData implements InstallDataInterface
         foreach ($queuesList as $queueName) {
             if (!isset($sysConfQueuesNames[$queueName])) {
                 $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_XML_NAME_KEY] = $queueName;
-                $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_SQS_NAME_KEY] = '';
+                $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_SQS_NAME_KEY] = $queueName;
             }
         }
 

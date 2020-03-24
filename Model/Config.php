@@ -9,12 +9,13 @@ namespace Belvg\Sqs\Model;
 
 use Enqueue\Sqs\SqsConnectionFactory;
 use Enqueue\Sqs\SqsContext;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 
 /**
- * Reads the SQS config in the deployed environment configuration
+ * Reads the SQS config in the system configuration or, alternatively, in the deployed environment configuration
  */
 class Config
 {
@@ -65,6 +66,11 @@ class Config
     private $scopeConfig;
 
     /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+
+    /**
      * @var array
      */
     private $channels = [];
@@ -89,7 +95,10 @@ class Config
      *             'access_key' => '123456',
      *             'secret_key' => '123456',
      *             'names_mapping' => [
-     *                  'esample.fifo' => 'sqs-example.fifo'
+     *                  'xml-esample.fifo' => [
+     *                      'xml_name' => 'xml-example.fifo',
+     *                      'sqs_name' => 'sqs-example.fifo'
+     *                  ]
      *              ],
      *             'prefix' => 'magento',
      *             'endpoint' => 'http://localhost:4575'
@@ -101,10 +110,12 @@ class Config
      */
     public function __construct(
         DeploymentConfig $config,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        SerializerInterface $serializer
     ){
         $this->deploymentConfig = $config;
         $this->scopeConfig = $scopeConfig;
+        $this->serializer = $serializer;
     }
 
     /**
@@ -119,8 +130,7 @@ class Config
                     'region' => $this->getValue(Config::REGION),
                     'key' => $this->getValue(Config::ACCESS_KEY),
                     'secret' => $this->getValue(Config::SECRET_KEY),
-                    'endpoint' => $this->getValue(Config::ENDPOINT),
-                    'names_mapping' => $this->getValue(Config::NAMES_MAPPING)
+                    'endpoint' => $this->getValue(Config::ENDPOINT)
                 ]
             ))->createContext();
         }
@@ -159,7 +169,46 @@ class Config
     }
 
     /**
-     * Get system config value for the XML path
+     * Load the configuration for SQS from system configs
+     *
+     * @return void
+     */
+    private function loadSystemConfigs()
+    {
+        if (null === $this->data) { 
+
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION)))
+                $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
+
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION))) 
+                $this->data[self::VERSION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION);
+
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY)))
+                $this->data[self::ACCESS_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY);
+
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY)))
+                $this->data[self::SECRET_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY);
+
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING))){
+
+                // If a queue has been mapped (XML name <> SQS name)
+                // or other fields have been set through system configs
+                // populate $this->data[self::NAMES_MAPPING]
+                $mapping = false;
+               
+                $namesMapping = $this->serializer->unserialize($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING));
+                foreach ($namesMapping as $queueName => $queueNameData) {
+                    if ($queueNameData[self::NAMES_MAPPING_XML_NAME_KEY] !== $queueNameData[self::NAMES_MAPPING_SQS_NAME_KEY])
+                        $mapping = true;
+                }
+
+                if (($mapping) || ($this->data !== null)) $this->data[self::NAMES_MAPPING] = $namesMapping;
+            }
+        }
+    }
+
+    /**
+     * Get the system config value for the XML path
      *
      * @param string $path
      * @return string
@@ -170,18 +219,11 @@ class Config
     }
 
     /**
-     * Load the configuration for SQS from system configs
+     * Get queues names mapping
      *
-     * @return void
+     * @return array
      */
-    private function loadSystemConfigs()
-    {
-        if (null === $this->data) {
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION))) $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION))) $this->data[self::VERSION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION);
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY))) $this->data[self::ACCESS_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY);
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY))) $this->data[self::SECRET_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY);
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING))) $this->data[self::NAMES_MAPPING] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING);
-        }
+    public function getNamesMapping(){
+        return empty($this->getValue(self::NAMES_MAPPING)) ? [] : $this->getValue(self::NAMES_MAPPING);
     }
 }

@@ -60,7 +60,7 @@ class Queue implements QueueInterface
     /**
      * Initialize dependencies.
      *
-     * @param Config $amqpConfig
+     * @param Config $sqsConfig
      * @param EnvelopeFactory $envelopeFactory
      * @param string $queueName
      * @param LoggerInterface $logger
@@ -75,10 +75,29 @@ class Queue implements QueueInterface
     )
     {
         $this->sqsConfig = $sqsConfig;
-        $this->queueName = $queueName;
+        $this->queueName = $this->getRemappedQueueName($queueName);
         $this->envelopeFactory = $envelopeFactory;
         $this->logger = $logger;
         $this->helper = $helper ?: ObjectManager::getInstance()->get(Data::class);
+    }
+
+    /**
+     * Get the remapped queue name
+     *
+     * @param string $queueName
+     * @return string
+     */
+    public function getRemappedQueueName(string $queueName){
+        
+        $sysConfQueuesNames = $this->sqsConfig->getNamesMapping();
+
+        foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueNameData) {
+            if ($sysConfQueueName == $queueName){
+                return $sysConfQueueNameData[Config::NAMES_MAPPING_SQS_NAME_KEY];
+            }
+        }
+
+        return $queueName;
     }
 
     /**
