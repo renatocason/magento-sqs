@@ -101,14 +101,14 @@ class RecurringData implements InstallDataInterface
         $queuesList = $this->getQueuesListByConnection(Config::SQS_CONFIG);
 
         // Get the system config queues names serialized array
-        if (!empty($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAME, ScopeInterface::SCOPE_STORE))) {
-            $sysConfQueuesNames = $this->serializer->unserialize($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAME, ScopeInterface::SCOPE_STORE));
+        if (!empty($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAMES_MAPPING, ScopeInterface::SCOPE_STORE))) {
+            $sysConfQueuesNames = $this->serializer->unserialize($this->scopeConfig->getValue(Config::XML_PATH_SQS_QUEUE_NAMES_MAPPING, ScopeInterface::SCOPE_STORE));
         } else {
             $sysConfQueuesNames = [];
         }
         
         // Remove old queues from system config serialized array
-        foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueSqsName) {
+        foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueNameValue) {
             if (!in_array($sysConfQueueName, $queuesList)) {
                 unset($sysConfQueuesNames[$sysConfQueueName]);
             }
@@ -117,7 +117,8 @@ class RecurringData implements InstallDataInterface
         // Add new queues to system config serialized array
         foreach ($queuesList as $queueName) {
             if (!isset($sysConfQueuesNames[$queueName])) {
-                $sysConfQueuesNames[$queueName] = '';
+                $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_XML_NAME_KEY] = $queueName;
+                $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_SQS_NAME_KEY] = '';
             }
         }
 
@@ -125,6 +126,6 @@ class RecurringData implements InstallDataInterface
         $newSysConfQueuesNames = $this->serializer->serialize($sysConfQueuesNames);
 
         // Save the new system config array
-        $this->saveConfig(Config::XML_PATH_SQS_QUEUE_NAME,$newSysConfQueuesNames);
+        $this->saveConfig(Config::XML_PATH_SQS_QUEUE_NAMES_MAPPING,$newSysConfQueuesNames);
     }
 }

@@ -28,19 +28,24 @@ class Config
      */
     const SQS_CONFIG = 'sqs';
 
-    const NAME = 'name';
     const REGION = 'region';
     const VERSION = 'version';
     const ACCESS_KEY = 'access_key';
     const SECRET_KEY = 'secret_key';
+    const NAMES_MAPPING = 'names_mapping';
     const PREFIX = 'prefix';
     const ENDPOINT = 'endpoint';
 
-    const XML_PATH_SQS_QUEUE_NAME = 'system/sqs/name';
     const XML_PATH_SQS_QUEUE_REGION = 'system/sqs/region';
     const XML_PATH_SQS_QUEUE_VERSION = 'system/sqs/version';
     const XML_PATH_SQS_QUEUE_ACCESS_KEY = 'system/sqs/access_key';
     const XML_PATH_SQS_QUEUE_SECRET_KEY = 'system/sqs/secret_key';
+    const XML_PATH_SQS_QUEUE_NAMES_MAPPING = 'system/sqs/names_mapping';
+
+    const NAMES_MAPPING_XML_NAME_KEY = 'xml_name';
+    const NAMES_MAPPING_XML_NAME_LABEL = 'XML name';
+    const NAMES_MAPPING_SQS_NAME_KEY = 'sqs_name';
+    const NAMES_MAPPING_SQS_NAME_LABEL = 'SQS name';
 
     /**
      * Deployment configuration
@@ -79,11 +84,13 @@ class Config
      * 'queue' =>
      *     [
      *         'sqs' => [
-     *             'name' => 'name',
      *             'region' => 'region',
      *             'version' => 'latest',
      *             'access_key' => '123456',
      *             'secret_key' => '123456',
+     *             'names_mapping' => [
+     *                  'esample.fifo' => 'sqs-example.fifo'
+     *              ],
      *             'prefix' => 'magento',
      *             'endpoint' => 'http://localhost:4575'
      *         ],
@@ -109,11 +116,11 @@ class Config
         if (!isset($this->connection)) {
             $this->connection = (new SqsConnectionFactory(
                 [
-                    'name' => $this->getValue(Config::NAME),
                     'region' => $this->getValue(Config::REGION),
                     'key' => $this->getValue(Config::ACCESS_KEY),
                     'secret' => $this->getValue(Config::SECRET_KEY),
-                    'endpoint' => $this->getValue(Config::ENDPOINT)
+                    'endpoint' => $this->getValue(Config::ENDPOINT),
+                    'names_mapping' => $this->getValue(Config::NAMES_MAPPING)
                 ]
             ))->createContext();
         }
@@ -170,11 +177,11 @@ class Config
     private function loadSystemConfigs()
     {
         if (null === $this->data) {
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAME))) $this->data[self::NAME] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAME);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION))) $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION))) $this->data[self::VERSION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_VERSION);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY))) $this->data[self::ACCESS_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY);
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY))) $this->data[self::SECRET_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY);
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING))) $this->data[self::NAMES_MAPPING] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING);
         }
     }
 }
