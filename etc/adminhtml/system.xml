@@ -15,8 +15,9 @@
                 <field id="access_key" type="text" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Access Key</label>
                 </field>
-                <field id="secret_key" type="password" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="secret_key" type="obscure" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Secret Key</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
                 <field id="names_mapping" translate="label comment" sortOrder="50" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Queues names mapping</label>

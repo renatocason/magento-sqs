@@ -13,6 +13,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 
 /**
  * Reads the SQS config in the system configuration or, alternatively, in the deployed environment configuration
@@ -71,6 +72,11 @@ class Config
     private $serializer;
 
     /**
+     * @var EncryptorInterface
+     */
+    private $encryptor;
+
+    /**
      * @var array
      */
     private $channels = [];
@@ -111,11 +117,13 @@ class Config
     public function __construct(
         DeploymentConfig $config,
         ScopeConfigInterface $scopeConfig,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        EncryptorInterface $encryptor
     ){
         $this->deploymentConfig = $config;
         $this->scopeConfig = $scopeConfig;
         $this->serializer = $serializer;
+        $this->encryptor = $encryptor;
     }
 
     /**
@@ -187,7 +195,7 @@ class Config
                 $this->data[self::ACCESS_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_ACCESS_KEY);
 
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY)))
-                $this->data[self::SECRET_KEY] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY);
+                $this->data[self::SECRET_KEY] = $this->encryptor->decrypt($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY));
 
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING))){
 
