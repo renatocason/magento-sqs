@@ -121,7 +121,7 @@ class RecurringData implements InstallDataInterface
         foreach ($queuesList as $queueName) {
             if (!isset($sysConfQueuesNames[$queueName])) {
                 $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_XML_NAME_KEY] = $queueName;
-                $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_SQS_NAME_KEY] = $queueName;
+                $sysConfQueuesNames[$queueName][Config::NAMES_MAPPING_SQS_NAME_KEY] = '';
             }
         }
 
