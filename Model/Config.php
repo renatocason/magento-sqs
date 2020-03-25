@@ -184,7 +184,6 @@ class Config
     private function loadSystemConfigs()
     {
         if (null === $this->data) { 
-
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION)))
                 $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
 
@@ -198,19 +197,8 @@ class Config
                 $this->data[self::SECRET_KEY] = $this->encryptor->decrypt($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY));
 
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING))){
-
-                // If a queue has been mapped (XML name <> SQS name)
-                // or other fields have been set through system configs
-                // populate $this->data[self::NAMES_MAPPING]
-                $mapping = false;
-               
-                $namesMapping = $this->serializer->unserialize($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING));
-                foreach ($namesMapping as $queueName => $queueNameData) {
-                    if ($queueNameData[self::NAMES_MAPPING_XML_NAME_KEY] !== $queueNameData[self::NAMES_MAPPING_SQS_NAME_KEY])
-                        $mapping = true;
-                }
-
-                if (($mapping) || ($this->data !== null)) $this->data[self::NAMES_MAPPING] = $namesMapping;
+                // If other fields have been set through system configs, populate $this->data[self::NAMES_MAPPING]
+                if ($this->data !== null) $this->data[self::NAMES_MAPPING] = $this->serializer->unserialize($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING));
             }
         }
     }
