@@ -8,7 +8,7 @@
 namespace Belvg\Sqs\Model;
 
 use Belvg\Sqs\Helper\Data;
-use Enqueue\Psr\PsrMessage;
+use Enqueue\Sqs\SqsMessage;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\MessageQueue\EnvelopeFactory;
 use Magento\Framework\MessageQueue\EnvelopeInterface;
@@ -145,10 +145,10 @@ class Queue implements QueueInterface
     }
 
     /**
-     * @param PsrMessage $message
+     * @param SqsMessage $message
      * @return \Magento\Framework\MessageQueue\Envelope
      */
-    protected function createEnvelop(PsrMessage $message)
+    protected function createEnvelop(SqsMessage $message)
     {
         return $this->envelopeFactory->create([
             'body' => $message->getBody(),
