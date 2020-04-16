@@ -13,6 +13,7 @@ use Magento\Framework\App\ObjectManager;
 use Magento\Framework\MessageQueue\EnvelopeFactory;
 use Magento\Framework\MessageQueue\EnvelopeInterface;
 use Magento\Framework\MessageQueue\QueueInterface;
+use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -58,6 +59,11 @@ class Queue implements QueueInterface
     private $helper;
 
     /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+
+    /**
      * Initialize dependencies.
      *
      * @param Config $sqsConfig
@@ -65,13 +71,15 @@ class Queue implements QueueInterface
      * @param string $queueName
      * @param LoggerInterface $logger
      * @param Data $helper
+     * @param SerializerInterface $serializer
      */
     public function __construct(
         Config $sqsConfig,
         EnvelopeFactory $envelopeFactory,
         $queueName,
         LoggerInterface $logger,
-        Data $helper = null
+        Data $helper = null,
+        SerializerInterface $serializer
     )
     {
         $this->sqsConfig = $sqsConfig;
@@ -79,6 +87,7 @@ class Queue implements QueueInterface
         $this->envelopeFactory = $envelopeFactory;
         $this->logger = $logger;
         $this->helper = $helper ?: ObjectManager::getInstance()->get(Data::class);
+        $this->serializer = $serializer;
     }
 
     /**
@@ -88,7 +97,7 @@ class Queue implements QueueInterface
      * @return string
      */
     public function getRemappedQueueName(string $queueName){
-        
+     
         $sysConfQueuesNames = $this->sqsConfig->getNamesMapping();
 
         foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueNameData) {
@@ -104,7 +113,7 @@ class Queue implements QueueInterface
      * {@inheritdoc}
      */
     public function dequeue()
-    {
+    {  
         /**
          * @var \Enqueue\Sqs\SqsMessage $message
          */
@@ -121,10 +130,11 @@ class Queue implements QueueInterface
      * @return \Enqueue\Sqs\SqsConsumer
      */
     public function createConsumer()
-    {
+    { 
         if (!$this->consumer) {
             $this->consumer = $this->sqsConfig->getConnection()->createConsumer($this->getQueue());
         }
+
         return $this->consumer;
     }
 
@@ -150,12 +160,20 @@ class Queue implements QueueInterface
      */
     protected function createEnvelop(SqsMessage $message)
     {
+        $messageBody = $this->serializer->unserialize($message->getBody());
+        
+        if (isset($messageBody['topic_name'])){
+            $topicName = $messageBody['topic_name'];
+        } else {
+            $topicName = $this->queueName;
+        }
+
         return $this->envelopeFactory->create([
             'body' => $message->getBody(),
             'properties' => [
                 'properties' => $message->getProperties(),
                 'receiptHandle' => $message->getReceiptHandle(),
-                'topic_name' => $this->queueName,
+                'topic_name' => $topicName,
                 'message_id' => $message->getReceiptHandle()
             ]
         ]);
@@ -195,7 +213,6 @@ class Queue implements QueueInterface
      */
     public function subscribe($callback, int $qtyOfMessages = null)
     {
-
         $index = 0;
         while (true) {
             /**
