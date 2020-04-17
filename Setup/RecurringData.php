@@ -80,19 +80,19 @@ class RecurringData implements InstallDataInterface
     }
 
     /**
-     * Return a list of queue names available for the connection
+     * Return a list of queue names available for specified connections
      *
-     * @param string $connection
+     * @param array $connections
      * @return array List of queue names
      */
-    private function getQueuesListByConnection($connection)
+    public function getQueuesListByConnection(array $connections): array
     {
         $queuesList = [];
         $queues = $this->topologyConfig->getQueues();
 
         // Add to the list all queues with the provided connection
         foreach ($queues as $queue) {
-            if ($queue->getConnection() === $connection) {
+            if (in_array($queue->getConnection(), $connections)) {
                 $queuesList[] = $queue->getName();
             }
         }
@@ -105,7 +105,7 @@ class RecurringData implements InstallDataInterface
     public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context)
     {
         // Get XML actually declared queues names
-        $queuesList = $this->getQueuesListByConnection(Config::SQS_CONFIG);
+        $queuesList = $this->getQueuesListByConnection([Config::SQS_CONFIG]);
 
         // Get the queues names mapping array
         $sysConfQueuesNames = $this->sqsConfig->getNamesMapping();
