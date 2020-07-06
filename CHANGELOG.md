@@ -19,3 +19,7 @@ Versioning](http://semver.org/).
 - Fix check for empty data and comment
 - Fix encryption of API secret
 - Fix and css
+
+## [1.0.1] - 2020-07-06
+### Fix
+- Remove version in composer.json
