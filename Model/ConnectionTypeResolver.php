@@ -34,8 +34,7 @@ class ConnectionTypeResolver implements ConnectionTypeResolverInterface
         $queueConfig = $deploymentConfig->getConfigData(Config::QUEUE_CONFIG);
         if (isset($queueConfig['connections']) && is_array($queueConfig['connections'])) {
             $this->sqsConnectionName = array_keys($queueConfig['connections']);
-        }
-        if (isset($queueConfig[Config::SQS_CONFIG])) {
+        } else {
             $this->sqsConnectionName[] = Config::SQS_CONFIG;
         }
     }

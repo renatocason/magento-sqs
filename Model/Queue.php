@@ -8,11 +8,12 @@
 namespace Belvg\Sqs\Model;
 
 use Belvg\Sqs\Helper\Data;
-use Enqueue\Psr\PsrMessage;
+use Enqueue\Sqs\SqsMessage;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\MessageQueue\EnvelopeFactory;
 use Magento\Framework\MessageQueue\EnvelopeInterface;
 use Magento\Framework\MessageQueue\QueueInterface;
+use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -58,34 +59,61 @@ class Queue implements QueueInterface
     private $helper;
 
     /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+
+    /**
      * Initialize dependencies.
      *
-     * @param Config $amqpConfig
+     * @param Config $sqsConfig
      * @param EnvelopeFactory $envelopeFactory
      * @param string $queueName
      * @param LoggerInterface $logger
      * @param Data $helper
+     * @param SerializerInterface $serializer
      */
     public function __construct(
         Config $sqsConfig,
         EnvelopeFactory $envelopeFactory,
         $queueName,
         LoggerInterface $logger,
-        Data $helper = null
+        Data $helper = null,
+        SerializerInterface $serializer
     )
     {
         $this->sqsConfig = $sqsConfig;
-        $this->queueName = $queueName;
+        $this->queueName = $this->getRemappedQueueName($queueName);
         $this->envelopeFactory = $envelopeFactory;
         $this->logger = $logger;
         $this->helper = $helper ?: ObjectManager::getInstance()->get(Data::class);
+        $this->serializer = $serializer;
+    }
+
+    /**
+     * Get the remapped queue name
+     *
+     * @param string $queueName
+     * @return string
+     */
+    public function getRemappedQueueName(string $queueName){
+     
+        $sysConfQueuesNames = $this->sqsConfig->getNamesMapping();
+
+        foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueNameData) {
+            if ($sysConfQueueName == $queueName){
+                return $sysConfQueueNameData[Config::NAMES_MAPPING_SQS_NAME_KEY];
+            }
+        }
+
+        return $queueName;
     }
 
     /**
      * {@inheritdoc}
      */
     public function dequeue()
-    {
+    {  
         /**
          * @var \Enqueue\Sqs\SqsMessage $message
          */
@@ -102,10 +130,11 @@ class Queue implements QueueInterface
      * @return \Enqueue\Sqs\SqsConsumer
      */
     public function createConsumer()
-    {
+    { 
         if (!$this->consumer) {
             $this->consumer = $this->sqsConfig->getConnection()->createConsumer($this->getQueue());
         }
+
         return $this->consumer;
     }
 
@@ -126,17 +155,25 @@ class Queue implements QueueInterface
     }
 
     /**
-     * @param PsrMessage $message
+     * @param SqsMessage $message
      * @return \Magento\Framework\MessageQueue\Envelope
      */
-    protected function createEnvelop(PsrMessage $message)
+    protected function createEnvelop(SqsMessage $message)
     {
+        $messageBody = $this->serializer->unserialize($message->getBody());
+        
+        if (isset($messageBody['topic_name'])){
+            $topicName = $messageBody['topic_name'];
+        } else {
+            $topicName = $this->queueName;
+        }
+
         return $this->envelopeFactory->create([
             'body' => $message->getBody(),
             'properties' => [
                 'properties' => $message->getProperties(),
                 'receiptHandle' => $message->getReceiptHandle(),
-                'topic_name' => $this->queueName,
+                'topic_name' => $topicName,
                 'message_id' => $message->getReceiptHandle()
             ]
         ]);
@@ -176,7 +213,6 @@ class Queue implements QueueInterface
      */
     public function subscribe($callback, int $qtyOfMessages = null)
     {
-
         $index = 0;
         while (true) {
             /**
