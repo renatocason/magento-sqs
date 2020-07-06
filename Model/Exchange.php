@@ -44,6 +44,12 @@ class Exchange implements ExchangeInterface
      */
     public function enqueue($topic, EnvelopeInterface $envelope)
     {
+        // If the topic is an async operation
+        if (substr($topic,0,6) == 'async.') {
+
+            // Use the async operations queue name
+            $topic = 'async.operations.all';
+        }
 
         $queue = $this->createQueue($topic);
         $queue->push($envelope);

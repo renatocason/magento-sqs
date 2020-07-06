@@ -1,0 +1,11 @@
+#system_sqs_names_mapping .xml-name{
+    pointer-events: none;
+    border: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+#system_sqs_names_mapping .col-actions,
+#system_sqs_names_mapping .col-actions-add{
+    display: none;
+}
