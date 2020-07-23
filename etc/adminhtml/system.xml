@@ -4,22 +4,27 @@
         <section id="system">
             <group id="sqs" showInDefault="1" showInStore="0" showInWebsite="0" sortOrder="10" translate="label">
                 <label>Amazon Simple Queue Service (SQS)</label>
-                <field id="region" type="text" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="config_to_use" type="select" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Consider the following configuration</label>
+                    <source_model>Belvg\Sqs\Model\Config\Source\ConfigToUse</source_model>
+                    <comment>If no, the deployment configuration is used</comment>
+                </field>
+                <field id="region" type="text" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Region</label>
                     <comment>For example: eu-west-1</comment>
                 </field>
-                <field id="version" type="text" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="version" type="text" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Version</label>
                     <comment>API version, for example: 2012-11-05</comment>
                 </field>
-                <field id="access_key" type="text" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="access_key" type="text" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Access Key</label>
                 </field>
-                <field id="secret_key" type="obscure" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="secret_key" type="obscure" translate="label comment" sortOrder="50" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Secret Key</label>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
-                <field id="names_mapping" translate="label comment" sortOrder="50" showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="names_mapping" translate="label comment" sortOrder="60" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Queues names mapping</label>
                     <frontend_model>Belvg\Sqs\Block\Adminhtml\Form\Field\NamesMapping</frontend_model>
                     <backend_model>Magento\Config\Model\Config\Backend\Serialized\ArraySerialized</backend_model>

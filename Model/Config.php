@@ -38,6 +38,7 @@ class Config
     const PREFIX = 'prefix';
     const ENDPOINT = 'endpoint';
 
+    const XML_PATH_SQS_QUEUE_CONFIG_TO_USE = 'system/sqs/config_to_use';
     const XML_PATH_SQS_QUEUE_REGION = 'system/sqs/region';
     const XML_PATH_SQS_QUEUE_VERSION = 'system/sqs/version';
     const XML_PATH_SQS_QUEUE_ACCESS_KEY = 'system/sqs/access_key';
@@ -183,7 +184,7 @@ class Config
      */
     private function loadSystemConfigs()
     {
-        if (null === $this->data) { 
+        if ((null === $this->data) && ($this->getSysConfig(self::XML_PATH_SQS_QUEUE_CONFIG_TO_USE) == 'system')) {
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION)))
                 $this->data[self::REGION] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_REGION);
 
@@ -196,10 +197,8 @@ class Config
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY)))
                 $this->data[self::SECRET_KEY] = $this->encryptor->decrypt($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY));
 
-            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING))){
-                // If other fields have been set through system configs, populate $this->data[self::NAMES_MAPPING]
-                if ($this->data !== null) $this->data[self::NAMES_MAPPING] = $this->serializer->unserialize($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING));
-            }
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING)))
+                $this->data[self::NAMES_MAPPING] = $this->serializer->unserialize($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING));
         }
     }
 
