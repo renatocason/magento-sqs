@@ -14,6 +14,7 @@ use Magento\Framework\MessageQueue\EnvelopeFactory;
 use Magento\Framework\MessageQueue\EnvelopeInterface;
 use Magento\Framework\MessageQueue\QueueInterface;
 use Magento\Framework\Serialize\SerializerInterface;
+use PhpAmqpLib\Wire\AMQPTable;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -97,7 +98,7 @@ class Queue implements QueueInterface
      * @return string
      */
     public function getRemappedQueueName(string $queueName){
-     
+
         $sysConfQueuesNames = $this->sqsConfig->getNamesMapping();
 
         foreach ($sysConfQueuesNames as $sysConfQueueName => $sysConfQueueNameData) {
@@ -113,7 +114,7 @@ class Queue implements QueueInterface
      * {@inheritdoc}
      */
     public function dequeue()
-    {  
+    {
         /**
          * @var \Enqueue\Sqs\SqsMessage $message
          */
@@ -130,7 +131,7 @@ class Queue implements QueueInterface
      * @return \Enqueue\Sqs\SqsConsumer
      */
     public function createConsumer()
-    { 
+    {
         if (!$this->consumer) {
             $this->consumer = $this->sqsConfig->getConnection()->createConsumer($this->getQueue());
         }
@@ -161,21 +162,21 @@ class Queue implements QueueInterface
     protected function createEnvelop(SqsMessage $message)
     {
         $messageBody = $this->serializer->unserialize($message->getBody());
-        
+
         if (isset($messageBody['topic_name'])){
             $topicName = $messageBody['topic_name'];
         } else {
             $topicName = $this->queueName;
         }
 
+        $properties = is_array($message->getProperties()) ? $message->getProperties() : [];
+        $properties['topic_name'] = $topicName;
+        $properties['receiptHandle'] = $message->getReceiptHandle();
+        $properties['message_id'] = $message->getReceiptHandle();
+
         return $this->envelopeFactory->create([
             'body' => $message->getBody(),
-            'properties' => [
-                'properties' => $message->getProperties(),
-                'receiptHandle' => $message->getReceiptHandle(),
-                'topic_name' => $topicName,
-                'message_id' => $message->getReceiptHandle()
-            ]
+            'properties' => $properties
         ]);
     }
 
@@ -198,9 +199,8 @@ class Queue implements QueueInterface
      */
     public function createMessage(EnvelopeInterface $envelope)
     {
-        $mergerProperties = $envelope->getProperties();
-        $properties = array_key_exists('properties', $mergerProperties) ? $mergerProperties['properties'] : [];
-        $receiptHandler = array_key_exists('receiptHandle', $mergerProperties) ? $mergerProperties['receiptHandle'] : null;
+        $properties = $envelope->getProperties();
+        $receiptHandler = array_key_exists('receiptHandle', $properties) ? $properties['receiptHandle'] : null;
         $message = $this->sqsConfig->getConnection()->createMessage($envelope->getBody(), $properties);
         if ($receiptHandler) {
             $message->setReceiptHandle($receiptHandler);
