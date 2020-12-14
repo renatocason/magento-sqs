@@ -24,6 +24,10 @@
                     <label>Secret Key</label>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
+                <field id="message_group_id" type="text" translate="label comment" sortOrder="55" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Message group id </label>
+                    <comment>This field is required for fifo queue</comment>
+                </field>
                 <field id="names_mapping" translate="label comment" sortOrder="60" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Queues names mapping</label>
                     <frontend_model>Belvg\Sqs\Block\Adminhtml\Form\Field\NamesMapping</frontend_model>

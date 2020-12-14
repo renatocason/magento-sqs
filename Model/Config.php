@@ -37,6 +37,7 @@ class Config
     const NAMES_MAPPING = 'names_mapping';
     const PREFIX = 'prefix';
     const ENDPOINT = 'endpoint';
+    const MESSAGE_GROUP_ID = 'message_group_id';
 
     const XML_PATH_SQS_QUEUE_CONFIG_TO_USE = 'system/sqs/config_to_use';
     const XML_PATH_SQS_QUEUE_REGION = 'system/sqs/region';
@@ -44,6 +45,7 @@ class Config
     const XML_PATH_SQS_QUEUE_ACCESS_KEY = 'system/sqs/access_key';
     const XML_PATH_SQS_QUEUE_SECRET_KEY = 'system/sqs/secret_key';
     const XML_PATH_SQS_QUEUE_NAMES_MAPPING = 'system/sqs/names_mapping';
+    const XML_PATH_SQS_QUEUE_MESSAGE_GROUP_ID = 'system/sqs/message_group_id';
 
     const NAMES_MAPPING_XML_NAME_KEY = 'xml_name';
     const NAMES_MAPPING_XML_NAME_LABEL = 'XML name';
@@ -157,7 +159,7 @@ class Config
     {
         // Load the configuration from system configs
         $this->loadSystemConfigs();
-        
+
         // If no data in system configs, load deployment configs
         $this->load();
 
@@ -196,6 +198,9 @@ class Config
 
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY)))
                 $this->data[self::SECRET_KEY] = $this->encryptor->decrypt($this->getSysConfig(self::XML_PATH_SQS_QUEUE_SECRET_KEY));
+
+            if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_MESSAGE_GROUP_ID)))
+                $this->data[self::MESSAGE_GROUP_ID] = $this->getSysConfig(self::XML_PATH_SQS_QUEUE_MESSAGE_GROUP_ID);
 
             if (!empty($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING)))
                 $this->data[self::NAMES_MAPPING] = $this->serializer->unserialize($this->getSysConfig(self::XML_PATH_SQS_QUEUE_NAMES_MAPPING));
