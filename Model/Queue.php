@@ -205,6 +205,9 @@ class Queue implements QueueInterface
         if ($receiptHandler) {
             $message->setReceiptHandle($receiptHandler);
         }
+        if (substr($this->getQueueName(), -5) == '.fifo') {
+            $message->setMessageGroupId($this->sqsConfig->getValue(Config::MESSAGE_GROUP_ID));
+        }
         return $message;
     }
 
