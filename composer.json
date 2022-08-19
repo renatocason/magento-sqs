@@ -2,8 +2,8 @@
   "name": "belvg/module-sqs",
   "description": "N/A",
   "require": {
-    "php": "^7.2|^7.3",
-    "magento/framework": "^102.0.0|^103.0.0",
+    "php": "^7.2|^7.3|^8.1",
+    "magento/framework": "^102.0.0|^103.0.0|^104.0.0",
     "magento/framework-message-queue": "^100.3.0|^100.4.0",
     "enqueue/sqs":"@dev"
   },
